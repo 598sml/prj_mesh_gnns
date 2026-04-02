@@ -1,11 +1,10 @@
 import torch
-import torch_scatter
 import torch.nn as nn
 from torch.nn import Linear, Sequential, LayerNorm, ReLU
-from torch_geometric.nn import MessagePassing
-from torch_geometric.data import Data
+# from torch_geometric.data import Data # Maybe I dont need this line here CHECK TODO
 
-import mesh_gnn.utils as utils
+from . import normalization as norm
+from .processor import ProcessorLayer
 
 class MeshGraphNet(torch.nn.Module):
     def __init__(self, input_dim_node, input_dim_edge, hidden_dim, output_dim, cfg):
@@ -38,12 +37,12 @@ class MeshGraphNet(torch.nn.Module):
 
         # Processor initialization
 
-        self.processors = nn.ModuleList()
-        assert self.num_layers >= 1, "Number of layers must be at least 1" # the processor must have at least one layer, 10 were used in the paper. CHECK
+        self.processor = nn.ModuleList()
+        assert self.num_layers >= 1, "Number of layers must be at least 1" # the processor must have at least one layer, 10 were used in the paper. CHECK TODO
 
         processor_layer = self._build_processor_layer()
         for _ in range(self.num_layers):
-            self.processors.append(processor_layer(hidden_dim, hidden_dim))
+            self.processor.append(processor_layer(hidden_dim, hidden_dim))
 
 
         # Decoder (only for node features, as we are predicting node dynamics)
@@ -77,15 +76,15 @@ class MeshGraphNet(torch.nn.Module):
 
         # Normalize node and edge features
 
-        x =  utils.normalize(x, mean_vec_x, std_vec_x)
-        edge_attr = utils.normalize(edge_attr, mean_vec_edge, std_vec_edge)
+        x =  norm.normalize(x, mean_vec_x, std_vec_x)
+        edge_attr = norm.normalize(edge_attr, mean_vec_edge, std_vec_edge)
 
         # Step 1: Encode node and edge features into latent node and edge embeddings
         x = self.node_encoder(x)
         edge_attr = self.edge_encoder(edge_attr)
 
         # Step 2: Process the latent embeddings through multiple processor layers
-        for processor in self.processors:
+        for processor in self.processor:
             x, edge_attr = processor(x, edge_index, edge_attr)
 
         # Step 3: Decode the final node embeddings to produce the output predictions
@@ -111,7 +110,7 @@ class MeshGraphNet(torch.nn.Module):
                                      (torch.argmax(inputs.x[:, 2:], dim=1) == outflow))
 
         # Normalize true values with dataset mean and std
-        labels = utils.normalize(inputs.y, mean_vec_y, std_vec_y)
+        labels = norm.normalize(inputs.y, mean_vec_y, std_vec_y)
 
         # Sum of square errors for each node (in here considering all the nodes))
         error = torch.sum((labels - pred) ** 2, axis=1) # compute the error for each node, error is [num_nodes]
@@ -120,5 +119,3 @@ class MeshGraphNet(torch.nn.Module):
         loss = torch.sqrt(torch.mean(error[loss_mask]))
 
         return loss
-    
-
