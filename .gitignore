@@ -1,3 +1,5 @@
 *.venv*
 *.tfrecord
 *.json
+*.hdf5
+*.pt
