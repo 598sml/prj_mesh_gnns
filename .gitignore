@@ -3,3 +3,5 @@
 *.json
 *.hdf5
 *.pt
+__pycache__/
+*.pyc
