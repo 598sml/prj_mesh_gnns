@@ -1,18 +1,128 @@
-import torch
+import os
+import sys
 import random
 import numpy as np
-import os
-import math
-import tqdm
+import torch
+import matplotlib.pyplot as plt
 
-from meshgraphnet import MeshGraphNet
-from meshgraphnet import normalization as norm
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
 
-from torch_geometric.data import Data
-from torch_geometric.loader import DataLoader
-
-import torch.optim as optim
-import copy
+from meshgraphnet.config import Config
+from meshgraphnet.train_eval import train
+from meshgraphnet.normalization import get_stats
 
 
+def set_seed(seed: int = 0):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
 
+
+def main():
+    cfg = Config()
+
+    cfg.device = "cuda" if torch.cuda.is_available() else "cpu"
+    cfg.model.hidden_dim = 10
+    cfg.model.num_layers = 10
+    cfg.training.batch_size = 16
+    cfg.training.learning_rate = 1e-3
+    cfg.training.weight_decay = 5e-4
+    cfg.training.num_epochs = 5000
+
+    # optional repo-style data noise settings
+    if not hasattr(cfg, "data"):
+        class DataConfig:
+            noise_scale = 0.0
+            noise_gamma = 1.0
+        cfg.data = DataConfig()
+    else:
+        if not hasattr(cfg.data, "noise_scale"):
+            cfg.data.noise_scale = 0.0
+        if not hasattr(cfg.data, "noise_gamma"):
+            cfg.data.noise_gamma = 1.0
+
+    set_seed(5)
+
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    file_path = os.path.join(base_dir, "meshgraphnets_miniset5traj_vis.pt")
+    data_all = torch.load(file_path, weights_only=False)
+    train_size = 45
+    valid_size = 10
+
+    # repo-style: shuffle first, then split
+    random.shuffle(data_all)
+    data_train = data_all[:train_size]
+    data_valid = data_all[train_size: train_size + valid_size]
+
+    print(f"Train samples: {len(data_train)}")
+    print(f"Valid samples: {len(data_valid)}")
+    print(f"x shape: {data_train[0].x.shape}")
+    print(f"edge_index shape: {data_train[0].edge_index.shape}")
+    print(f"edge_attr shape: {data_train[0].edge_attr.shape}")
+    print(f"y shape: {data_train[0].y.shape}")
+    print(f"Device: {cfg.device}")
+
+    # repo-style: compute stats on train + valid together
+    stats_list = get_stats(data_train + data_valid)
+
+    (
+        model,
+        train_losses,
+        valid_losses,
+        velocity_valid_losses,
+        best_model,
+        best_valid_loss,
+    ) = train(
+        data_train=data_train,
+        data_valid=data_valid,
+        stats_list=stats_list,
+        cfg=cfg,
+    )
+
+    print("Finished training.")
+    print(f"Best valid loss: {best_valid_loss:.6f}")
+
+    plot_dir = os.path.join("outputs", "figures")
+    os.makedirs(plot_dir, exist_ok=True)
+
+    plt.figure()
+    plt.plot(train_losses, label="train")
+    plt.plot(valid_losses, label="valid")
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
+    plt.legend()
+    plt.title("Training and Validation Loss")
+    plt.savefig(
+        os.path.join(plot_dir, "loss_curve.png"),
+        dpi=200,
+        bbox_inches="tight",
+    )
+    plt.show()
+
+    save_dir = os.path.join("outputs", "checkpoints")
+    os.makedirs(save_dir, exist_ok=True)
+
+    checkpoint = {
+        "model_state_dict": best_model,
+        "stats_list": stats_list,
+        "cfg": cfg,
+        "num_node_features": data_train[0].x.shape[1],
+        "num_edge_features": data_train[0].edge_attr.shape[1],
+        "num_classes": 2,
+        "train_losses": train_losses,
+        "valid_losses": valid_losses,
+        "velocity_valid_losses": velocity_valid_losses,
+        "best_valid_loss": best_valid_loss,
+    }
+
+    save_path = os.path.join(save_dir, "meshgraphnet_first_run.pt")
+    torch.save(checkpoint, save_path)
+    print(f"Saved best model checkpoint to {save_path}")
+
+
+if __name__ == "__main__":
+    main()
