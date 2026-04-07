@@ -53,16 +53,16 @@ def get_stats(data_list):
 
     # Loop through the data list and accumulate the sum and sum of squares for each feature.
     for data in data_list:
-        mean_vec_x = torch.sum(data.x, dim=0)
-        std_vec_x = torch.sum(data.x**2, dim=0)
+        mean_vec_x += torch.sum(data.x, dim=0)
+        std_vec_x += torch.sum(data.x**2, dim=0)
         num_accumulations_x += data.x.shape[0]
 
-        mean_vec_edge = torch.sum(data.edge_attr, dim=0)
-        std_vec_edge = torch.sum(data.edge_attr**2, dim=0)
+        mean_vec_edge += torch.sum(data.edge_attr, dim=0)
+        std_vec_edge += torch.sum(data.edge_attr**2, dim=0)
         num_accumulations_edge += data.edge_attr.shape[0]
 
-        mean_vec_y = torch.sum(data.y, dim=0)
-        std_vec_y = torch.sum(data.y**2, dim=0)
+        mean_vec_y += torch.sum(data.y, dim=0)
+        std_vec_y += torch.sum(data.y**2, dim=0)
         num_accumulations_y += data.y.shape[0]
 
         # If the number of accumulations exceeds the maximum, compute the mean and std and reset the accumulators.
