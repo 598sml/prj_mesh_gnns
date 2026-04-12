@@ -1,22 +1,32 @@
 import os
 import sys
 import random
-from types import SimpleNamespace
 
 import numpy as np
 import torch
-import matplotlib.pyplot as plt
-import matplotlib.tri as mtri
 from torch_geometric.loader import DataLoader
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-from meshgraphnet.config import Config
-from meshgraphnet.model import MeshGraphNet
 from meshgraphnet.train_eval import evaluate
-from meshgraphnet import normalization as norm
+from meshgraphnet.inference import (
+    load_checkpoint_and_model,
+    predict_next_velocity,
+    reconstruct_true_next_velocity,
+    one_step_pair_rmse,
+)
+
+from meshgraphnet.data_utils import (
+    build_ordered_test_data,
+    check_consecutive_pair,
+)
+
+from meshgraphnet.plot_utils import (
+    make_comparison_plot,
+    save_rmse_plot
+)
 
 
 def set_seed(seed: int = 0):
@@ -25,97 +35,6 @@ def set_seed(seed: int = 0):
     torch.manual_seed(seed)
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(seed)
-
-
-def rebuild_cfg_from_dict(cfg_dict):
-    """
-    Rebuild a Config object from the plain dictionary saved in the checkpoint.
-    """
-    cfg = Config()
-
-    cfg.device = "cuda" if torch.cuda.is_available() else "cpu"
-
-    cfg.model.hidden_dim = cfg_dict["model"]["hidden_dim"]
-    cfg.model.num_layers = cfg_dict["model"]["num_layers"]
-
-    cfg.training.batch_size = cfg_dict["training"]["batch_size"]
-    cfg.training.learning_rate = cfg_dict["training"]["learning_rate"]
-    cfg.training.weight_decay = cfg_dict["training"]["weight_decay"]
-    cfg.training.num_epochs = cfg_dict["training"]["num_epochs"]
-
-    if not hasattr(cfg, "data"):
-        cfg.data = SimpleNamespace()
-
-    cfg.data.noise_scale = cfg_dict["data"]["noise_scale"]
-    cfg.data.noise_gamma = cfg_dict["data"]["noise_gamma"]
-
-    return cfg
-
-
-def check_consecutive_pair(test_data, delta_t, i=0):
-    """
-    Check whether graph i and graph i+1 are consecutive time steps on the same mesh.
-    """
-    if i + 1 >= len(test_data):
-        print(f"Cannot check pair {i} -> {i+1}: not enough samples.")
-        return
-
-    g0 = test_data[i]
-    g1 = test_data[i + 1]
-
-    print(f"\nConsistency check for pair {i} -> {i+1}")
-    print("same edge_index:", torch.equal(g0.edge_index, g1.edge_index))
-    print("same cells:", torch.equal(g0.cells, g1.cells))
-    print("same mesh_pos:", torch.allclose(g0.mesh_pos, g1.mesh_pos))
-
-    v1_from_g0 = g0.x[:, 0:2] + g0.y * delta_t
-    v1_actual = g1.x[:, 0:2]
-
-    print("allclose:", torch.allclose(v1_from_g0, v1_actual, atol=1e-6, rtol=1e-5))
-    print("max abs diff:", torch.max(torch.abs(v1_from_g0 - v1_actual)).item())
-    print("mean abs diff:", torch.mean(torch.abs(v1_from_g0 - v1_actual)).item())
-
-
-def make_comparison_plot(mesh_pos, cells, true_field, pred_field, error_field, component_name, save_path):
-    """
-    Save a 3-panel comparison: truth, prediction, error.
-    """
-    triang = mtri.Triangulation(
-        mesh_pos[:, 0].cpu().numpy(),
-        mesh_pos[:, 1].cpu().numpy(),
-        cells.cpu().numpy(),
-    )
-
-    true_np = true_field.cpu().numpy()
-    pred_np = pred_field.cpu().numpy()
-    err_np = error_field.cpu().numpy()
-
-    vmin = min(true_np.min(), pred_np.min())
-    vmax = max(true_np.max(), pred_np.max())
-
-    fig, axes = plt.subplots(1, 3, figsize=(16, 4.5), constrained_layout=True)
-
-    im0 = axes[0].tripcolor(triang, true_np, shading="flat", vmin=vmin, vmax=vmax)
-    axes[0].set_title(f"True {component_name}")
-    axes[0].set_xlabel("x")
-    axes[0].set_ylabel("y")
-    fig.colorbar(im0, ax=axes[0])
-
-    im1 = axes[1].tripcolor(triang, pred_np, shading="flat", vmin=vmin, vmax=vmax)
-    axes[1].set_title(f"Predicted {component_name}")
-    axes[1].set_xlabel("x")
-    axes[1].set_ylabel("y")
-    fig.colorbar(im1, ax=axes[1])
-
-    im2 = axes[2].tripcolor(triang, err_np, shading="flat")
-    axes[2].set_title(f"Error {component_name}")
-    axes[2].set_xlabel("x")
-    axes[2].set_ylabel("y")
-    fig.colorbar(im2, ax=axes[2])
-
-    plt.savefig(save_path, dpi=120)
-    plt.close(fig)
-
 
 def main():
     set_seed(5)
@@ -126,7 +45,21 @@ def main():
     checkpoint_path = os.path.join(
         base_dir, "outputs", "checkpoints", "meshgraphnet_first_run.pt"
     )
+
+    file_path = os.path.join(base_dir, "meshgraphnets_miniset5traj_vis.pt")
+
+    # Ordered test slice from the original dataset
+    test_start = 45
+    test_size = 10
+
+    # Save ordered debug test set
     test_data_path = os.path.join(base_dir, "test_ordered_debug.pt")
+    test_data = build_ordered_test_data(
+        file_path=file_path,
+        test_start=test_start,
+        test_size=test_size,
+        save_path=test_data_path,
+    )
 
     print("checkpoint_path:", checkpoint_path)
     print("test_data_path:", test_data_path)
@@ -134,11 +67,7 @@ def main():
     print("test exists:", os.path.exists(test_data_path))
 
     # ---------- Load checkpoint ----------
-    checkpoint = torch.load(checkpoint_path, weights_only=False)
-    cfg_dict = checkpoint["cfg_dict"]
-    stats_list = checkpoint["stats_list"]
-
-    cfg = rebuild_cfg_from_dict(cfg_dict)
+    checkpoint, cfg, model, stats = load_checkpoint_and_model(checkpoint_path)
     print(f"Using device: {cfg.device}")
 
     # ---------- Load test data ----------
@@ -148,19 +77,7 @@ def main():
     # ---------- Dataset consistency check ----------
     check_consecutive_pair(test_data, delta_t, i=0)
 
-    # ---------- Rebuild model ----------
-    model = MeshGraphNet(
-        input_dim_node=checkpoint["num_node_features"],
-        input_dim_edge=checkpoint["num_edge_features"],
-        hidden_dim=cfg.model.hidden_dim,
-        output_dim=checkpoint["num_classes"],
-        cfg=cfg,
-    ).to(cfg.device)
-
-    model.load_state_dict(checkpoint["model_state_dict"])
-    model.eval()
-
-    # ---------- Move stats to device ----------
+    # ---------- Statistics already moved to device in inference.py ----------
     (
         mean_vec_x,
         std_vec_x,
@@ -168,14 +85,7 @@ def main():
         std_vec_edge,
         mean_vec_y,
         std_vec_y,
-    ) = stats_list
-
-    mean_vec_x = mean_vec_x.to(cfg.device)
-    std_vec_x = std_vec_x.to(cfg.device)
-    mean_vec_edge = mean_vec_edge.to(cfg.device)
-    std_vec_edge = std_vec_edge.to(cfg.device)
-    mean_vec_y = mean_vec_y.to(cfg.device)
-    std_vec_y = std_vec_y.to(cfg.device)
+    ) = stats
 
     # ---------- Quantitative evaluation ----------
     test_loader = DataLoader(
@@ -200,40 +110,82 @@ def main():
     print(f"Test one-step loss: {test_loss:.6f}")
     print(f"Test one-step velocity RMSE: {test_velocity_rmse:.6f}")
 
-    # ---------- Single-sample visualization ----------
-    sample_idx = 0
-    sample = test_data[sample_idx].to(cfg.device)
-
-    with torch.no_grad():
-        pred = model(sample, mean_vec_x, std_vec_x, mean_vec_edge, std_vec_edge)
-
-    pred_delta = norm.unnormalize(pred, mean_vec_y, std_vec_y)
-    pred_velocity_next = sample.x[:, 0:2] + pred_delta * delta_t
-    true_velocity_next = sample.x[:, 0:2] + sample.y * delta_t
-    error_velocity = pred_velocity_next - true_velocity_next
-
-    plot_dir = os.path.join(base_dir, "outputs", "eval_figures")
+    # ---------- Output directory ----------
+    plot_dir = os.path.join(base_dir, "outputs", "one_step")
     os.makedirs(plot_dir, exist_ok=True)
 
-    make_comparison_plot(
-        mesh_pos=sample.mesh_pos.detach().cpu(),
-        cells=sample.cells.detach().cpu(),
-        true_field=true_velocity_next[:, 0].detach().cpu(),
-        pred_field=pred_velocity_next[:, 0].detach().cpu(),
-        error_field=error_velocity[:, 0].detach().cpu(),
-        component_name="u",
-        save_path=os.path.join(plot_dir, f"sample_{sample_idx:03d}_u_comparison.png"),
+    # ---------- Per-step one-step RMSE across ordered sequence ----------
+    per_step_rmse = []
+
+    for i in range(len(test_data) - 1):
+        sample = test_data[i].to(cfg.device)
+        next_sample = test_data[i + 1].to(cfg.device)
+
+        rmse, pred_velocity_next, true_velocity_next = one_step_pair_rmse(
+            model=model,
+            graph_t=sample,
+            graph_tp1=next_sample,
+            stats=stats,
+            delta_t=delta_t,
+        )
+        per_step_rmse.append(rmse)
+
+        print(f"step {i} -> {i+1} RMSE: {rmse:.6f}")
+
+    rmse_plot_path = os.path.join(plot_dir, "per_step_rmse.png")
+    save_rmse_plot(
+        rmse_values=per_step_rmse,
+        save_path=rmse_plot_path,
+        xlabel="Step index",
+        ylabel="Velocity RMSE",
+        title="One-step RMSE across ordered test trajectory",
     )
 
-    make_comparison_plot(
-        mesh_pos=sample.mesh_pos.detach().cpu(),
-        cells=sample.cells.detach().cpu(),
-        true_field=true_velocity_next[:, 1].detach().cpu(),
-        pred_field=pred_velocity_next[:, 1].detach().cpu(),
-        error_field=error_velocity[:, 1].detach().cpu(),
-        component_name="v",
-        save_path=os.path.join(plot_dir, f"sample_{sample_idx:03d}_v_comparison.png"),
-    )
+    print(f"Saved per-step RMSE plot to: {rmse_plot_path}")
+
+    # ---------- Multi-sample visualization ----------
+    sample_indices = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+    for sample_idx in sample_indices:
+        if sample_idx >= len(test_data):
+            print(f"Skipping sample {sample_idx}: out of range.")
+            continue
+
+        sample = test_data[sample_idx].to(cfg.device)
+
+        pred_velocity_next, _ = predict_next_velocity(
+            model=model,
+            graph=sample,
+            stats=stats,
+            delta_t=delta_t,
+        )
+        true_velocity_next = reconstruct_true_next_velocity(
+            graph=sample,
+            delta_t=delta_t,
+        )
+        error_velocity = pred_velocity_next - true_velocity_next
+
+        make_comparison_plot(
+            mesh_pos=sample.mesh_pos.detach().cpu(),
+            cells=sample.cells.detach().cpu(),
+            true_field=true_velocity_next[:, 0].detach().cpu(),
+            pred_field=pred_velocity_next[:, 0].detach().cpu(),
+            error_field=error_velocity[:, 0].detach().cpu(),
+            component_name="u",
+            save_path=os.path.join(plot_dir, f"sample_{sample_idx:03d}_u_comparison.png"),
+        )
+
+        make_comparison_plot(
+            mesh_pos=sample.mesh_pos.detach().cpu(),
+            cells=sample.cells.detach().cpu(),
+            true_field=true_velocity_next[:, 1].detach().cpu(),
+            pred_field=pred_velocity_next[:, 1].detach().cpu(),
+            error_field=error_velocity[:, 1].detach().cpu(),
+            component_name="v",
+            save_path=os.path.join(plot_dir, f"sample_{sample_idx:03d}_v_comparison.png"),
+        )
+
+        print(f"Saved plots for sample {sample_idx}")
 
     print(f"Saved evaluation figures to: {plot_dir}")
 
