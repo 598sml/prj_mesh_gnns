@@ -21,6 +21,24 @@ def set_seed(seed: int = 0):
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(seed)
 
+def build_cfg_dict(cfg):
+    return {
+        "device": cfg.device,
+        "model": {
+            "hidden_dim": cfg.model.hidden_dim,
+            "num_layers": cfg.model.num_layers,
+        },
+        "training": {
+            "batch_size": cfg.training.batch_size,
+            "learning_rate": cfg.training.learning_rate,
+            "weight_decay": cfg.training.weight_decay,
+            "num_epochs": cfg.training.num_epochs,
+        },
+        "data": {
+            "noise_scale": cfg.data.noise_scale,
+            "noise_gamma": cfg.data.noise_gamma,
+        },
+    }
 
 def main():
     cfg = Config()
@@ -31,7 +49,7 @@ def main():
     cfg.training.batch_size = 16
     cfg.training.learning_rate = 1e-3
     cfg.training.weight_decay = 5e-4
-    cfg.training.num_epochs = 5000
+    cfg.training.num_epochs = 200
 
     # optional repo-style data noise settings
     if not hasattr(cfg, "data"):
@@ -66,8 +84,8 @@ def main():
     print(f"y shape: {data_train[0].y.shape}")
     print(f"Device: {cfg.device}")
 
-    # repo-style: compute stats on train + valid together
-    stats_list = get_stats(data_train + data_valid)
+    # compute stats on train, originally we had train+valid but that leaks valid info into train stats
+    stats_list = get_stats(data_train)
 
     (
         model,
@@ -106,10 +124,17 @@ def main():
     save_dir = os.path.join("outputs", "checkpoints")
     os.makedirs(save_dir, exist_ok=True)
 
+    cfg_dict = build_cfg_dict(cfg)
+
+    if isinstance(best_model, dict):
+        best_state_dict = best_model
+    else:
+        best_state_dict = best_model.state_dict()
+
     checkpoint = {
-        "model_state_dict": best_model,
+        "model_state_dict": best_state_dict,
         "stats_list": stats_list,
-        "cfg": cfg,
+        "cfg_dict": cfg_dict,
         "num_node_features": data_train[0].x.shape[1],
         "num_edge_features": data_train[0].edge_attr.shape[1],
         "num_classes": 2,
