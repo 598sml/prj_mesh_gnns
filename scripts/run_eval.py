@@ -42,24 +42,35 @@ def main():
 
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+    # checkpoint_path = os.path.join(
+    #     base_dir, "outputs", "checkpoints", "meshgraphnet_first_run.pt"
+    # )
+
     checkpoint_path = os.path.join(
-        base_dir, "outputs", "checkpoints", "meshgraphnet_first_run.pt"
+        base_dir, "outputs", "checkpoints", "meshgraphnet_train600_valid50.pt"
     )
 
-    file_path = os.path.join(base_dir, "meshgraphnets_miniset5traj_vis.pt")
+    # file_path = os.path.join(base_dir, "meshgraphnets_miniset5traj_vis.pt")
 
-    # Ordered test slice from the original dataset
-    test_start = 45
-    test_size = 10
+    # # Ordered test slice from the original dataset
+    # test_start = 45
+    # test_size = 10
 
-    # Save ordered debug test set
-    test_data_path = os.path.join(base_dir, "test_ordered_debug.pt")
-    test_data = build_ordered_test_data(
-        file_path=file_path,
-        test_start=test_start,
-        test_size=test_size,
-        save_path=test_data_path,
-    )
+    # # Save ordered debug test set
+    # test_data_path = os.path.join(base_dir, "test_ordered_debug.pt")
+    # test_data = build_ordered_test_data(
+    #     file_path=file_path,
+    #     test_start=test_start,
+    #     test_size=test_size,
+    #     save_path=test_data_path,
+    # )
+
+    # print("checkpoint_path:", checkpoint_path)
+    # print("test_data_path:", test_data_path)
+    # print("checkpoint exists:", os.path.exists(checkpoint_path))
+    # print("test exists:", os.path.exists(test_data_path))
+
+    test_data_path = os.path.join(base_dir, "data", "processed", "data_pt", "test.pt")
 
     print("checkpoint_path:", checkpoint_path)
     print("test_data_path:", test_data_path)
@@ -144,8 +155,8 @@ def main():
     print(f"Saved per-step RMSE plot to: {rmse_plot_path}")
 
     # ---------- Multi-sample visualization ----------
-    sample_indices = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-
+    # sample_indices = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    sample_indices = [0, 50, 100, 200, 300, 400, 500]
     for sample_idx in sample_indices:
         if sample_idx >= len(test_data):
             print(f"Skipping sample {sample_idx}: out of range.")

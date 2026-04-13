@@ -49,7 +49,7 @@ def main():
     cfg.training.batch_size = 16
     cfg.training.learning_rate = 1e-3
     cfg.training.weight_decay = 5e-4
-    cfg.training.num_epochs = 200
+    cfg.training.num_epochs = 1000
 
     # optional repo-style data noise settings
     if not hasattr(cfg, "data"):
@@ -65,23 +65,37 @@ def main():
 
     set_seed(5)
 
-    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    file_path = os.path.join(base_dir, "meshgraphnets_miniset5traj_vis.pt")
-    data_all = torch.load(file_path, weights_only=False)
-    train_size = 45
-    valid_size = 10
+    # base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    # file_path = os.path.join(base_dir, "meshgraphnets_miniset5traj_vis.pt")
+    # data_all = torch.load(file_path, weights_only=False)
+    # train_size = 45
+    # valid_size = 10
 
-    # repo-style: shuffle first, then split
-    random.shuffle(data_all)
-    data_train = data_all[:train_size]
-    data_valid = data_all[train_size: train_size + valid_size]
+    # # repo-style: shuffle first, then split
+    # random.shuffle(data_all)
+    # data_train = data_all[:train_size]
+    # data_valid = data_all[train_size: train_size + valid_size]
+
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+    train_path = os.path.join(base_dir, "data", "processed", "data_pt", "train.pt")
+    valid_path = os.path.join(base_dir, "data", "processed", "data_pt", "valid.pt")
+
+    data_train = torch.load(train_path, weights_only=False)
+    data_train = data_train[0:600]
+    data_valid = torch.load(valid_path, weights_only=False)
+    data_valid = data_valid[0:50]
+
+    # optional: shuffle training samples only
+    random.shuffle(data_train)
 
     print(f"Train samples: {len(data_train)}")
     print(f"Valid samples: {len(data_valid)}")
-    print(f"x shape: {data_train[0].x.shape}")
-    print(f"edge_index shape: {data_train[0].edge_index.shape}")
-    print(f"edge_attr shape: {data_train[0].edge_attr.shape}")
-    print(f"y shape: {data_train[0].y.shape}")
+    print(f"Train sample x shape: {data_train[0].x.shape}")
+    print(f"Train sample edge_index shape: {data_train[0].edge_index.shape}")
+    print(f"Train sample edge_attr shape: {data_train[0].edge_attr.shape}")
+    print(f"Train sample y shape: {data_train[0].y.shape}")
+    print(f"Valid sample x shape: {data_valid[0].x.shape}")
     print(f"Device: {cfg.device}")
 
     # compute stats on train, originally we had train+valid but that leaks valid info into train stats
@@ -144,7 +158,7 @@ def main():
         "best_valid_loss": best_valid_loss,
     }
 
-    save_path = os.path.join(save_dir, "meshgraphnet_first_run.pt")
+    save_path = os.path.join(save_dir, "meshgraphnet_train600_valid50.pt")
     torch.save(checkpoint, save_path)
     print(f"Saved best model checkpoint to {save_path}")
 
