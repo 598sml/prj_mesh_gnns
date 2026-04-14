@@ -1,6 +1,7 @@
 import os
 import sys
 import random
+import json
 
 import numpy as np
 import torch
@@ -23,6 +24,11 @@ from meshgraphnet.plot_utils import (
 )
 
 
+def load_json_config(path: str):
+    with open(path, "r") as f:
+        return json.load(f)
+
+
 def set_seed(seed: int = 0):
     random.seed(seed)
     np.random.seed(seed)
@@ -31,16 +37,22 @@ def set_seed(seed: int = 0):
         torch.cuda.manual_seed_all(seed)
 
 def main():
-    set_seed(5)
-    delta_t = 0.01
+    config_path = os.path.join(PROJECT_ROOT, "configs", "config.json")
+    cfg_json = load_json_config(config_path)
 
-    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    set_seed(cfg_json["seed"])
+    delta_t = cfg_json["data"]["delta_t"]
+
+    base_dir = PROJECT_ROOT
 
     # checkpoint_path = os.path.join(
     #     base_dir, "outputs", "checkpoints", "meshgraphnet_first_run.pt"
     # )
     checkpoint_path = os.path.join(
-        base_dir, "outputs", "checkpoints", "meshgraphnet_train600_valid50.pt"
+        base_dir,
+        cfg_json["paths"]["checkpoint_dir"],
+        cfg_json["experiment_name"],
+        f"{cfg_json['experiment_name']}.pt",
     )
 
     # file_path = os.path.join(base_dir, "meshgraphnets_miniset5traj_vis.pt")
@@ -71,12 +83,15 @@ def main():
     # test_data = torch.load(test_data_path, weights_only=False)
     # print(f"Loaded {len(test_data)} ordered test graph samples.")
 
-    split = "train"   # "train" or "test"
-    traj_idx = 0      # only used when split == "train"
+    split = cfg_json["rollout"]["split"]   # "train" or "test"
+    traj_idx = cfg_json["rollout"]["train_traj_idx"]      # only used when split == "train"
 
+    # Load rollout data based on either test or train split
+    # For test we seen that the rollout show a significant increase in error
+    # For train we see that the rollout error is much smaller, but it is not a surprise since the model has seen this trajectory during training.
     if split == "test":
         rollout_data_path = os.path.join(
-            base_dir, "data", "processed", "data_pt", "test.pt"
+            base_dir, cfg_json["paths"]["test_data"]
         )
         rollout_data = torch.load(rollout_data_path, weights_only=False)
 
@@ -88,7 +103,7 @@ def main():
 
     elif split == "train":
         train_data_path = os.path.join(
-            base_dir, "data", "processed", "data_pt", "train.pt"
+            base_dir, cfg_json["paths"]["train_data"]
         )
         train_all = torch.load(train_data_path, weights_only=False)
 
@@ -120,7 +135,12 @@ def main():
     for i, rmse in enumerate(rollout_rmse):
         print(f"rollout step {i} -> {i+1}: {rmse:.6f}")
 
-    out_dir = os.path.join(base_dir, "outputs", "2rollout_figures")
+    out_dir = os.path.join(
+        base_dir,
+        cfg_json["paths"]["rollout_dir"],
+        cfg_json["experiment_name"],
+        split if split == "test" else f"train_traj_{traj_idx}",
+    )
     os.makedirs(out_dir, exist_ok=True)
 
     rmse_plot_path = os.path.join(out_dir, "rollout_rmse.png")
@@ -135,7 +155,7 @@ def main():
 
     # sample_steps = [1, 2, 5, 8]
 
-    sample_steps = [1, 2, 3, 4, 5, 10, 50, 100, 200, 300, 400, 500]
+    sample_steps = cfg_json["rollout"]["sample_steps"]
     for step in sample_steps:
         if step >= len(rollout_data):
             continue

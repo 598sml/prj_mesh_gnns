@@ -1,5 +1,5 @@
 {
-  "experiment_name": "mgn_smoke_test",
+  "experiment_name": "mgn_smoke_test_quick",
 
   "seed": 5,
   "device": "cuda",
@@ -43,7 +43,7 @@
     "batch_size": 16,
     "learning_rate": 0.001,
     "weight_decay": 0.0005,
-    "num_epochs": 5000
+    "num_epochs": 200
   },
 
   "evaluation": {
@@ -51,7 +51,7 @@
   },
 
   "rollout": {
-    "split": "test",
+    "split": "train",
     "train_traj_idx": 0,
     "sample_steps": [0, 50, 100, 200, 300, 400, 500]
   },

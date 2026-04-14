@@ -1,6 +1,7 @@
 import os
 import sys
 import random
+import json
 
 import numpy as np
 import torch
@@ -29,6 +30,11 @@ from meshgraphnet.plot_utils import (
 )
 
 
+def load_json_config(path: str):
+    with open(path, "r") as f:
+        return json.load(f)
+
+
 def set_seed(seed: int = 0):
     random.seed(seed)
     np.random.seed(seed)
@@ -37,17 +43,23 @@ def set_seed(seed: int = 0):
         torch.cuda.manual_seed_all(seed)
 
 def main():
-    set_seed(5)
-    delta_t = 0.01
+    config_path = os.path.join(PROJECT_ROOT, "configs", "config.json")
+    cfg_json = load_json_config(config_path)
 
-    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    set_seed(cfg_json["seed"])
+    delta_t = cfg_json["data"]["delta_t"]
+
+    base_dir = PROJECT_ROOT
 
     # checkpoint_path = os.path.join(
     #     base_dir, "outputs", "checkpoints", "meshgraphnet_first_run.pt"
     # )
 
     checkpoint_path = os.path.join(
-        base_dir, "outputs", "checkpoints", "meshgraphnet_train600_valid50.pt"
+        base_dir,
+        cfg_json["paths"]["checkpoint_dir"],
+        cfg_json["experiment_name"],
+        f"{cfg_json['experiment_name']}.pt",
     )
 
     # file_path = os.path.join(base_dir, "meshgraphnets_miniset5traj_vis.pt")
@@ -70,7 +82,7 @@ def main():
     # print("checkpoint exists:", os.path.exists(checkpoint_path))
     # print("test exists:", os.path.exists(test_data_path))
 
-    test_data_path = os.path.join(base_dir, "data", "processed", "data_pt", "test.pt")
+    test_data_path = os.path.join(base_dir, cfg_json["paths"]["test_data"])
 
     print("checkpoint_path:", checkpoint_path)
     print("test_data_path:", test_data_path)
@@ -122,7 +134,11 @@ def main():
     print(f"Test one-step velocity RMSE: {test_velocity_rmse:.6f}")
 
     # ---------- Output directory ----------
-    plot_dir = os.path.join(base_dir, "outputs", "one_step")
+    plot_dir = os.path.join(
+        base_dir,
+        cfg_json["paths"]["one_step_dir"],
+        cfg_json["experiment_name"],
+    )
     os.makedirs(plot_dir, exist_ok=True)
 
     # ---------- Per-step one-step RMSE across ordered sequence ----------
@@ -156,7 +172,7 @@ def main():
 
     # ---------- Multi-sample visualization ----------
     # sample_indices = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-    sample_indices = [0, 50, 100, 200, 300, 400, 500]
+    sample_indices = cfg_json["evaluation"]["sample_indices"]
     for sample_idx in sample_indices:
         if sample_idx >= len(test_data):
             print(f"Skipping sample {sample_idx}: out of range.")
