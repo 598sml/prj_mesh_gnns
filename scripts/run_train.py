@@ -4,6 +4,7 @@ import random
 import numpy as np
 import torch
 import matplotlib.pyplot as plt
+import json
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if PROJECT_ROOT not in sys.path:
@@ -13,6 +14,35 @@ from meshgraphnet.config import Config
 from meshgraphnet.train_eval import train
 from meshgraphnet.normalization import get_stats
 
+def load_json_config(path: str):
+    with open(path, "r") as f:
+        return json.load(f)
+
+
+def apply_json_to_cfg(cfg, cfg_json):
+    cfg.device = (
+        "cuda"
+        if (cfg_json["device"] == "cuda" and torch.cuda.is_available())
+        else "cpu"
+    )
+
+    cfg.model.hidden_dim = cfg_json["model"]["hidden_dim"]
+    cfg.model.num_layers = cfg_json["model"]["num_layers"]
+
+    cfg.training.batch_size = cfg_json["training"]["batch_size"]
+    cfg.training.learning_rate = cfg_json["training"]["learning_rate"]
+    cfg.training.weight_decay = cfg_json["training"]["weight_decay"]
+    cfg.training.num_epochs = cfg_json["training"]["num_epochs"]
+
+    if not hasattr(cfg, "data"):
+        class DataConfig:
+            pass
+        cfg.data = DataConfig()
+
+    cfg.data.noise_scale = cfg_json["data"]["noise_scale"]
+    cfg.data.noise_gamma = cfg_json["data"]["noise_gamma"]
+
+    return cfg
 
 def set_seed(seed: int = 0):
     random.seed(seed)
@@ -43,13 +73,9 @@ def build_cfg_dict(cfg):
 def main():
     cfg = Config()
 
-    cfg.device = "cuda" if torch.cuda.is_available() else "cpu"
-    cfg.model.hidden_dim = 10
-    cfg.model.num_layers = 10
-    cfg.training.batch_size = 16
-    cfg.training.learning_rate = 1e-3
-    cfg.training.weight_decay = 5e-4
-    cfg.training.num_epochs = 1000
+    config_path = os.path.join(PROJECT_ROOT, "configs", "config.json")
+    cfg_json = load_json_config(config_path)
+    cfg = apply_json_to_cfg(cfg, cfg_json)
 
     # optional repo-style data noise settings
     if not hasattr(cfg, "data"):
@@ -63,8 +89,6 @@ def main():
         if not hasattr(cfg.data, "noise_gamma"):
             cfg.data.noise_gamma = 1.0
 
-    set_seed(5)
-
     # base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     # file_path = os.path.join(base_dir, "meshgraphnets_miniset5traj_vis.pt")
     # data_all = torch.load(file_path, weights_only=False)
@@ -76,18 +100,38 @@ def main():
     # data_train = data_all[:train_size]
     # data_valid = data_all[train_size: train_size + valid_size]
 
-    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    set_seed(cfg_json["seed"])
 
-    train_path = os.path.join(base_dir, "data", "processed", "data_pt", "train.pt")
-    valid_path = os.path.join(base_dir, "data", "processed", "data_pt", "valid.pt")
+    base_dir = PROJECT_ROOT
 
-    data_train = torch.load(train_path, weights_only=False)
-    data_train = data_train[0:600]
-    data_valid = torch.load(valid_path, weights_only=False)
-    data_valid = data_valid[0:50]
+    if cfg_json["dataset_source"] == "dataset_colab":
+        file_path = os.path.join(base_dir, cfg_json["dataset_colab"]["file_path"])
+        data_all = torch.load(file_path, weights_only=False)
 
-    # optional: shuffle training samples only
-    random.shuffle(data_train)
+        # repo-style: shuffle first, then split
+        if cfg_json["dataset_colab"]["shuffle_before_split"]:
+            random.shuffle(data_all)
+
+        train_size = cfg_json["dataset_colab"]["train_size"]
+        valid_size = cfg_json["dataset_colab"]["valid_size"]
+
+        data_train = data_all[:train_size]
+        data_valid = data_all[train_size: train_size + valid_size]
+
+    else:
+        train_path = os.path.join(base_dir, cfg_json["paths"]["train_data"])
+        valid_path = os.path.join(base_dir, cfg_json["paths"]["valid_data"])
+
+        data_train = torch.load(train_path, weights_only=False)
+        data_valid = torch.load(valid_path, weights_only=False)
+
+        if cfg_json["data"]["use_subset"]:
+            data_train = data_train[: cfg_json["data"]["train_subset_size"]]
+            data_valid = data_valid[: cfg_json["data"]["valid_subset_size"]]
+
+        # optional: shuffle training samples only
+        if cfg_json["data"]["shuffle_train"]:
+            random.shuffle(data_train)
 
     print(f"Train samples: {len(data_train)}")
     print(f"Valid samples: {len(data_valid)}")
@@ -118,7 +162,11 @@ def main():
     print("Finished training.")
     print(f"Best valid loss: {best_valid_loss:.6f}")
 
-    plot_dir = os.path.join("outputs", "figures")
+    plot_dir = os.path.join(
+        base_dir,
+        cfg_json["paths"]["figure_dir"],
+        cfg_json["experiment_name"],
+    )
     os.makedirs(plot_dir, exist_ok=True)
 
     plt.figure()
@@ -135,7 +183,11 @@ def main():
     )
     plt.show()
 
-    save_dir = os.path.join("outputs", "checkpoints")
+    save_dir = os.path.join(
+        base_dir,
+        cfg_json["paths"]["checkpoint_dir"],
+        cfg_json["experiment_name"],
+    )
     os.makedirs(save_dir, exist_ok=True)
 
     cfg_dict = build_cfg_dict(cfg)
@@ -158,9 +210,15 @@ def main():
         "best_valid_loss": best_valid_loss,
     }
 
-    save_path = os.path.join(save_dir, "meshgraphnet_train600_valid50.pt")
+    save_path = os.path.join(save_dir, f"{cfg_json['experiment_name']}.pt")
     torch.save(checkpoint, save_path)
     print(f"Saved best model checkpoint to {save_path}")
+
+    config_save_path = os.path.join(save_dir, "config_used.json")
+    with open(config_save_path, "w") as f:
+        json.dump(cfg_json, f, indent=2)
+
+    print(f"Saved config to {config_save_path}")
 
 
 if __name__ == "__main__":
