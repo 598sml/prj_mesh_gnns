@@ -124,7 +124,7 @@ def main():
     )
     os.makedirs(log_dir, exist_ok=True)
 
-    log_path = os.path.join(log_dir, "train.log")
+    log_path = os.path.join(log_dir, "training.log")
     log_file = open(log_path, "w")
     original_stdout = sys.stdout
     sys.stdout = Tee(sys.stdout, log_file)
