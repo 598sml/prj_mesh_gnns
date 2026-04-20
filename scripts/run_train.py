@@ -14,6 +14,19 @@ from meshgraphnet.config import Config
 from meshgraphnet.train_eval import train
 from meshgraphnet.normalization import get_stats
 
+class Tee:
+    def __init__(self, *streams):
+        self.streams = streams
+
+    def write(self, data):
+        for stream in self.streams:
+            stream.write(data)
+            stream.flush()
+
+    def flush(self):
+        for stream in self.streams:
+            stream.flush()
+
 def load_json_config(path: str):
     with open(path, "r") as f:
         return json.load(f)
@@ -104,11 +117,23 @@ def main():
 
     base_dir = PROJECT_ROOT
 
+    log_dir = os.path.join(
+        base_dir,
+        cfg_json["paths"]["checkpoint_dir"],
+        cfg_json["experiment_name"],
+    )
+    os.makedirs(log_dir, exist_ok=True)
+
+    log_path = os.path.join(log_dir, "train.log")
+    log_file = open(log_path, "w")
+    original_stdout = sys.stdout
+    sys.stdout = Tee(sys.stdout, log_file)
+
     if cfg_json["dataset_source"] == "dataset_colab":
         file_path = os.path.join(base_dir, cfg_json["dataset_colab"]["file_path"])
         data_all = torch.load(file_path, weights_only=False)
 
-        # repo-style: shuffle first, then split
+        # colab-style: shuffle first, then split
         if cfg_json["dataset_colab"]["shuffle_before_split"]:
             random.shuffle(data_all)
 
@@ -219,6 +244,10 @@ def main():
         json.dump(cfg_json, f, indent=2)
 
     print(f"Saved config to {config_save_path}")
+
+    sys.stdout = original_stdout
+    log_file.close()
+    print(f"Saved training log to {log_path}")
 
 
 if __name__ == "__main__":

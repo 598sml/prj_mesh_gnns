@@ -3,6 +3,7 @@ from . import normalization as norm
 
 import torch
 from torch_geometric.loader import DataLoader
+import time
 
 
 def train(data_train, data_valid, stats_list, cfg):
@@ -71,6 +72,8 @@ def train(data_train, data_valid, stats_list, cfg):
     best_valid_loss = float('inf')
     best_model = None
 
+    start_time = time.time()
+
     for epoch in range(cfg.training.num_epochs):
         model.train()
         total_train_loss = 0.0
@@ -123,9 +126,13 @@ def train(data_train, data_valid, stats_list, cfg):
             print(
                 f"Epoch {epoch+1}/{cfg.training.num_epochs}, "
                 f"Train Loss: {avg_train_loss:.6f}, "
-                f"Valid Loss: {valid_losses[-1]:.6f}"
+                f"Valid Loss: {valid_losses[-1]:.6f}, "
+                f"Vel RMSE: {velocity_valid_losses[-1]:.6f}, "
+                f"Best Valid: {best_valid_loss:.6f}"
             )
 
+    elapsed_time = time.time() - start_time
+    print(f"Training completed in {elapsed_time:.2f} seconds ({elapsed_time/60:.2f} minutes)")
     
     return (
         model,
@@ -187,4 +194,3 @@ def evaluate(
     avg_velocity_rmse = total_velocity_rmse / max(num_batches, 1)
 
     return avg_loss, avg_velocity_rmse
-
