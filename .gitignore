@@ -1,6 +1,6 @@
 *.venv*
 *.tfrecord
-
+wandb/
 *.hdf5
 *.pt
 __pycache__/
