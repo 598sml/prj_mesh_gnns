@@ -4,9 +4,10 @@ from . import normalization as norm
 import torch
 from torch_geometric.loader import DataLoader
 import time
+import wandb
 
 
-def train(data_train, data_valid, stats_list, cfg):
+def train(data_train, data_valid, stats_list, cfg, cfg_json=None):
     """
     Performs a training loop on the dataset for MeshGraphNet.
     """
@@ -121,6 +122,15 @@ def train(data_train, data_valid, stats_list, cfg):
         else:
             valid_losses.append(valid_losses[-1])
             velocity_valid_losses.append(velocity_valid_losses[-1])
+
+        if cfg_json is not None and cfg_json["wandb"]["enabled"]:
+            wandb.log({
+                "epoch": epoch + 1,
+                "train_loss": avg_train_loss,
+                "valid_loss": valid_losses[-1],
+                "velocity_valid_rmse": velocity_valid_losses[-1],
+                "best_valid_loss": best_valid_loss,
+            })                
 
         if epoch % 100 == 0:
             print(

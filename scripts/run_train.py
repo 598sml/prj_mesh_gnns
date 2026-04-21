@@ -5,6 +5,7 @@ import numpy as np
 import torch
 import matplotlib.pyplot as plt
 import json
+import wandb
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if PROJECT_ROOT not in sys.path:
@@ -88,6 +89,12 @@ def main():
 
     config_path = os.path.join(PROJECT_ROOT, "configs", "config.json")
     cfg_json = load_json_config(config_path)
+    if cfg_json["wandb"]["enabled"]:
+        wandb.init(
+            project=cfg_json["wandb"]["project"],
+            name=cfg_json["wandb"]["run_name"],
+            config=cfg_json,
+        )
     cfg = apply_json_to_cfg(cfg, cfg_json)
 
     # optional repo-style data noise settings
@@ -182,6 +189,7 @@ def main():
         data_valid=data_valid,
         stats_list=stats_list,
         cfg=cfg,
+        cfg_json=cfg_json,
     )
 
     print("Finished training.")
@@ -248,6 +256,8 @@ def main():
     sys.stdout = original_stdout
     log_file.close()
     print(f"Saved training log to {log_path}")
+    if cfg_json["wandb"]["enabled"]:
+        wandb.finish()
 
 
 if __name__ == "__main__":
