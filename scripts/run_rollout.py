@@ -39,6 +39,7 @@ def set_seed(seed: int = 0):
 def main():
     config_path = os.path.join(PROJECT_ROOT, "configs", "config.json")
     cfg_json = load_json_config(config_path)
+    data_cfg = cfg_json[cfg_json["dataset_source"]]
 
     set_seed(cfg_json["seed"])
     delta_t = cfg_json["data"]["delta_t"]
@@ -85,13 +86,14 @@ def main():
 
     split = cfg_json["rollout"]["split"]   # "train" or "test"
     traj_idx = cfg_json["rollout"]["train_traj_idx"]      # only used when split == "train"
+    trajectory_length = data_cfg["trajectory_length"]
 
     # Load rollout data based on either test or train split
     # For test we seen that the rollout show a significant increase in error
     # For train we see that the rollout error is much smaller, but it is not a surprise since the model has seen this trajectory during training.
     if split == "test":
         rollout_data_path = os.path.join(
-            base_dir, cfg_json["paths"]["test_data"]
+            base_dir, data_cfg["test_data"]
         )
         rollout_data = torch.load(rollout_data_path, weights_only=False)
 
@@ -103,12 +105,12 @@ def main():
 
     elif split == "train":
         train_data_path = os.path.join(
-            base_dir, cfg_json["paths"]["train_data"]
+            base_dir, data_cfg["train_data"]
         )
         train_all = torch.load(train_data_path, weights_only=False)
 
-        start = traj_idx * 599
-        end = (traj_idx + 1) * 599
+        start = traj_idx * trajectory_length
+        end = (traj_idx + 1) * trajectory_length
         rollout_data = train_all[start:end]
 
         print("checkpoint_path:", checkpoint_path)

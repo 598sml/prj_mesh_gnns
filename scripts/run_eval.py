@@ -45,6 +45,7 @@ def set_seed(seed: int = 0):
 def main():
     config_path = os.path.join(PROJECT_ROOT, "configs", "config.json")
     cfg_json = load_json_config(config_path)
+    data_cfg = cfg_json[cfg_json["dataset_source"]]
 
     set_seed(cfg_json["seed"])
     delta_t = cfg_json["data"]["delta_t"]
@@ -82,7 +83,7 @@ def main():
     # print("checkpoint exists:", os.path.exists(checkpoint_path))
     # print("test exists:", os.path.exists(test_data_path))
 
-    test_data_path = os.path.join(base_dir, cfg_json["paths"]["test_data"])
+    test_data_path = os.path.join(base_dir, data_cfg["test_data"])
 
     print("checkpoint_path:", checkpoint_path)
     print("test_data_path:", test_data_path)

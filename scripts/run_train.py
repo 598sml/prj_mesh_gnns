@@ -89,6 +89,8 @@ def main():
 
     config_path = os.path.join(PROJECT_ROOT, "configs", "config.json")
     cfg_json = load_json_config(config_path)
+    data_cfg = cfg_json[cfg_json["dataset_source"]]
+
     if cfg_json["wandb"]["enabled"]:
         wandb.init(
             project=cfg_json["wandb"]["project"],
@@ -151,18 +153,18 @@ def main():
         data_valid = data_all[train_size: train_size + valid_size]
 
     else:
-        train_path = os.path.join(base_dir, cfg_json["paths"]["train_data"])
-        valid_path = os.path.join(base_dir, cfg_json["paths"]["valid_data"])
+        train_path = os.path.join(base_dir, data_cfg["train_data"])
+        valid_path = os.path.join(base_dir, data_cfg["valid_data"])
 
         data_train = torch.load(train_path, weights_only=False)
         data_valid = torch.load(valid_path, weights_only=False)
 
-        if cfg_json["data"]["use_subset"]:
-            data_train = data_train[: cfg_json["data"]["train_subset_size"]]
-            data_valid = data_valid[: cfg_json["data"]["valid_subset_size"]]
+        if data_cfg["use_subset"]:
+            data_train = data_train[: data_cfg["train_subset_size"]]
+            data_valid = data_valid[: data_cfg["valid_subset_size"]]
 
         # optional: shuffle training samples only
-        if cfg_json["data"]["shuffle_train"]:
+        if data_cfg["shuffle_train"]:
             random.shuffle(data_train)
 
     print(f"Train samples: {len(data_train)}")
