@@ -1,0 +1,63 @@
+Train samples: 45
+Valid samples: 10
+Train sample x shape: torch.Size([1802, 11])
+Train sample edge_index shape: torch.Size([2, 10344])
+Train sample edge_attr shape: torch.Size([10344, 3])
+Train sample y shape: torch.Size([1802, 2])
+Valid sample x shape: torch.Size([1802, 11])
+Device: cuda
+Epoch 1/5000, Train Loss: 2.075967, Valid Loss: 1.232171, Vel RMSE: 0.017944, Best Valid: 1.232171
+Epoch 101/5000, Train Loss: 1.284121, Valid Loss: 0.754783, Vel RMSE: 0.010990, Best Valid: 0.754783
+Epoch 201/5000, Train Loss: 0.901358, Valid Loss: 0.576749, Vel RMSE: 0.008364, Best Valid: 0.576749
+Epoch 301/5000, Train Loss: 0.741087, Valid Loss: 0.522066, Vel RMSE: 0.007574, Best Valid: 0.483216
+Epoch 401/5000, Train Loss: 0.647268, Valid Loss: 0.447923, Vel RMSE: 0.006479, Best Valid: 0.447923
+Epoch 501/5000, Train Loss: 0.618199, Valid Loss: 0.431856, Vel RMSE: 0.006249, Best Valid: 0.429327
+Epoch 601/5000, Train Loss: 0.609106, Valid Loss: 0.470205, Vel RMSE: 0.006802, Best Valid: 0.403472
+Epoch 701/5000, Train Loss: 0.553266, Valid Loss: 0.413458, Vel RMSE: 0.005975, Best Valid: 0.403472
+Epoch 801/5000, Train Loss: 0.501110, Valid Loss: 0.377295, Vel RMSE: 0.005454, Best Valid: 0.377295
+Epoch 901/5000, Train Loss: 0.498872, Valid Loss: 0.385938, Vel RMSE: 0.005577, Best Valid: 0.377295
+Epoch 1001/5000, Train Loss: 0.478105, Valid Loss: 0.399681, Vel RMSE: 0.005771, Best Valid: 0.367875
+Epoch 1101/5000, Train Loss: 0.457707, Valid Loss: 0.361487, Vel RMSE: 0.005229, Best Valid: 0.353314
+Epoch 1201/5000, Train Loss: 0.449080, Valid Loss: 0.355510, Vel RMSE: 0.005139, Best Valid: 0.348099
+Epoch 1301/5000, Train Loss: 0.447212, Valid Loss: 0.362910, Vel RMSE: 0.005246, Best Valid: 0.348099
+Epoch 1401/5000, Train Loss: 0.432047, Valid Loss: 0.358660, Vel RMSE: 0.005185, Best Valid: 0.340682
+Epoch 1501/5000, Train Loss: 0.418121, Valid Loss: 0.347899, Vel RMSE: 0.005029, Best Valid: 0.333258
+Epoch 1601/5000, Train Loss: 0.409152, Valid Loss: 0.341215, Vel RMSE: 0.004934, Best Valid: 0.329039
+Epoch 1701/5000, Train Loss: 0.425667, Valid Loss: 0.372834, Vel RMSE: 0.005382, Best Valid: 0.327406
+Epoch 1801/5000, Train Loss: 0.394139, Valid Loss: 0.318585, Vel RMSE: 0.004605, Best Valid: 0.318585
+Epoch 1901/5000, Train Loss: 0.384840, Valid Loss: 0.320652, Vel RMSE: 0.004640, Best Valid: 0.312081
+Epoch 2001/5000, Train Loss: 0.405780, Valid Loss: 0.322479, Vel RMSE: 0.004662, Best Valid: 0.312081
+Epoch 2101/5000, Train Loss: 0.388304, Valid Loss: 0.330583, Vel RMSE: 0.004780, Best Valid: 0.307981
+Epoch 2201/5000, Train Loss: 0.382155, Valid Loss: 0.321410, Vel RMSE: 0.004649, Best Valid: 0.304353
+Epoch 2301/5000, Train Loss: 0.377326, Valid Loss: 0.320046, Vel RMSE: 0.004628, Best Valid: 0.299558
+Epoch 2401/5000, Train Loss: 0.371182, Valid Loss: 0.313307, Vel RMSE: 0.004535, Best Valid: 0.296831
+Epoch 2501/5000, Train Loss: 0.369827, Valid Loss: 0.305880, Vel RMSE: 0.004422, Best Valid: 0.296831
+Epoch 2601/5000, Train Loss: 0.369171, Valid Loss: 0.315260, Vel RMSE: 0.004555, Best Valid: 0.289467
+Epoch 2701/5000, Train Loss: 0.355039, Valid Loss: 0.300328, Vel RMSE: 0.004345, Best Valid: 0.289106
+Epoch 2801/5000, Train Loss: 0.353061, Valid Loss: 0.309530, Vel RMSE: 0.004480, Best Valid: 0.289106
+Epoch 2901/5000, Train Loss: 0.367298, Valid Loss: 0.293841, Vel RMSE: 0.004248, Best Valid: 0.288733
+Epoch 3001/5000, Train Loss: 0.341666, Valid Loss: 0.294537, Vel RMSE: 0.004258, Best Valid: 0.287066
+Epoch 3101/5000, Train Loss: 0.367768, Valid Loss: 0.323495, Vel RMSE: 0.004679, Best Valid: 0.287066
+Epoch 3201/5000, Train Loss: 0.350296, Valid Loss: 0.329134, Vel RMSE: 0.004771, Best Valid: 0.281604
+Epoch 3301/5000, Train Loss: 0.346009, Valid Loss: 0.297500, Vel RMSE: 0.004304, Best Valid: 0.277986
+Epoch 3401/5000, Train Loss: 0.352050, Valid Loss: 0.296350, Vel RMSE: 0.004293, Best Valid: 0.277986
+Epoch 3501/5000, Train Loss: 0.334319, Valid Loss: 0.307670, Vel RMSE: 0.004460, Best Valid: 0.274988
+Epoch 3601/5000, Train Loss: 0.319180, Valid Loss: 0.280435, Vel RMSE: 0.004054, Best Valid: 0.274988
+Epoch 3701/5000, Train Loss: 0.333219, Valid Loss: 0.287502, Vel RMSE: 0.004163, Best Valid: 0.274988
+Epoch 3801/5000, Train Loss: 0.332801, Valid Loss: 0.288129, Vel RMSE: 0.004165, Best Valid: 0.269332
+Epoch 3901/5000, Train Loss: 0.355043, Valid Loss: 0.273151, Vel RMSE: 0.003952, Best Valid: 0.269332
+Epoch 4001/5000, Train Loss: 0.382324, Valid Loss: 0.279629, Vel RMSE: 0.004042, Best Valid: 0.269332
+Epoch 4101/5000, Train Loss: 0.310291, Valid Loss: 0.275495, Vel RMSE: 0.003983, Best Valid: 0.269332
+Epoch 4201/5000, Train Loss: 0.309625, Valid Loss: 0.276769, Vel RMSE: 0.004002, Best Valid: 0.266962
+Epoch 4301/5000, Train Loss: 0.305368, Valid Loss: 0.270018, Vel RMSE: 0.003904, Best Valid: 0.266962
+Epoch 4401/5000, Train Loss: 0.317915, Valid Loss: 0.288936, Vel RMSE: 0.004186, Best Valid: 0.266962
+Epoch 4501/5000, Train Loss: 0.315863, Valid Loss: 0.298943, Vel RMSE: 0.004324, Best Valid: 0.266962
+Epoch 4601/5000, Train Loss: 0.319319, Valid Loss: 0.279181, Vel RMSE: 0.004034, Best Valid: 0.262668
+Epoch 4701/5000, Train Loss: 0.351773, Valid Loss: 0.271920, Vel RMSE: 0.003933, Best Valid: 0.262668
+Epoch 4801/5000, Train Loss: 0.293448, Valid Loss: 0.267313, Vel RMSE: 0.003865, Best Valid: 0.262668
+Epoch 4901/5000, Train Loss: 0.294531, Valid Loss: 0.277113, Vel RMSE: 0.004006, Best Valid: 0.262668
+Training completed in 1178.01 seconds (19.63 minutes)
+Finished training.
+Best valid loss: 0.262668
+Saved best model checkpoint to /u/burgos3/project/simulations/SciML/prj_mesh_gnns/outputs/checkpoints/mgn_smoke_test_quickwandb_cluster/mgn_smoke_test_quickwandb_cluster.pt
+Saved config to /u/burgos3/project/simulations/SciML/prj_mesh_gnns/outputs/checkpoints/mgn_smoke_test_quickwandb_cluster/config_used.json
