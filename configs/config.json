@@ -1,5 +1,5 @@
 {
-  "experiment_name": "mgn_smoke_test_quickwandb",
+  "experiment_name": "mgn_smoke_test_quickwandb_cluster",
 
   "seed": 5,
   "device": "cuda",
@@ -59,6 +59,6 @@
   "wandb": {
     "enabled": true,
     "project": "meshgraphnet-vortex",
-    "run_name": "mgn_smoke_test_wandb"
+    "run_name": "mgn_smoke_test_wandb_cluster"
   }
 }

@@ -1,0 +1,9 @@
+{
+    "0": {
+        "cells": "<class 'numpy.ndarray'> int32",
+        "mesh_pos": "<class 'numpy.ndarray'> float32",
+        "node_type": "<class 'numpy.ndarray'> int32",
+        "velocity": "<class 'numpy.ndarray'> float32",
+        "pressure": "<class 'numpy.ndarray'> float32"
+    }
+}

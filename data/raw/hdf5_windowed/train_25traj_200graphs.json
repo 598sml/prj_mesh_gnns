@@ -1,0 +1,177 @@
+{
+    "0": {
+        "cells": "<class 'numpy.ndarray'> int32",
+        "mesh_pos": "<class 'numpy.ndarray'> float32",
+        "node_type": "<class 'numpy.ndarray'> int32",
+        "velocity": "<class 'numpy.ndarray'> float32",
+        "pressure": "<class 'numpy.ndarray'> float32"
+    },
+    "1": {
+        "cells": "<class 'numpy.ndarray'> int32",
+        "mesh_pos": "<class 'numpy.ndarray'> float32",
+        "node_type": "<class 'numpy.ndarray'> int32",
+        "velocity": "<class 'numpy.ndarray'> float32",
+        "pressure": "<class 'numpy.ndarray'> float32"
+    },
+    "2": {
+        "cells": "<class 'numpy.ndarray'> int32",
+        "mesh_pos": "<class 'numpy.ndarray'> float32",
+        "node_type": "<class 'numpy.ndarray'> int32",
+        "velocity": "<class 'numpy.ndarray'> float32",
+        "pressure": "<class 'numpy.ndarray'> float32"
+    },
+    "3": {
+        "cells": "<class 'numpy.ndarray'> int32",
+        "mesh_pos": "<class 'numpy.ndarray'> float32",
+        "node_type": "<class 'numpy.ndarray'> int32",
+        "velocity": "<class 'numpy.ndarray'> float32",
+        "pressure": "<class 'numpy.ndarray'> float32"
+    },
+    "4": {
+        "cells": "<class 'numpy.ndarray'> int32",
+        "mesh_pos": "<class 'numpy.ndarray'> float32",
+        "node_type": "<class 'numpy.ndarray'> int32",
+        "velocity": "<class 'numpy.ndarray'> float32",
+        "pressure": "<class 'numpy.ndarray'> float32"
+    },
+    "5": {
+        "cells": "<class 'numpy.ndarray'> int32",
+        "mesh_pos": "<class 'numpy.ndarray'> float32",
+        "node_type": "<class 'numpy.ndarray'> int32",
+        "velocity": "<class 'numpy.ndarray'> float32",
+        "pressure": "<class 'numpy.ndarray'> float32"
+    },
+    "6": {
+        "cells": "<class 'numpy.ndarray'> int32",
+        "mesh_pos": "<class 'numpy.ndarray'> float32",
+        "node_type": "<class 'numpy.ndarray'> int32",
+        "velocity": "<class 'numpy.ndarray'> float32",
+        "pressure": "<class 'numpy.ndarray'> float32"
+    },
+    "7": {
+        "cells": "<class 'numpy.ndarray'> int32",
+        "mesh_pos": "<class 'numpy.ndarray'> float32",
+        "node_type": "<class 'numpy.ndarray'> int32",
+        "velocity": "<class 'numpy.ndarray'> float32",
+        "pressure": "<class 'numpy.ndarray'> float32"
+    },
+    "8": {
+        "cells": "<class 'numpy.ndarray'> int32",
+        "mesh_pos": "<class 'numpy.ndarray'> float32",
+        "node_type": "<class 'numpy.ndarray'> int32",
+        "velocity": "<class 'numpy.ndarray'> float32",
+        "pressure": "<class 'numpy.ndarray'> float32"
+    },
+    "9": {
+        "cells": "<class 'numpy.ndarray'> int32",
+        "mesh_pos": "<class 'numpy.ndarray'> float32",
+        "node_type": "<class 'numpy.ndarray'> int32",
+        "velocity": "<class 'numpy.ndarray'> float32",
+        "pressure": "<class 'numpy.ndarray'> float32"
+    },
+    "10": {
+        "cells": "<class 'numpy.ndarray'> int32",
+        "mesh_pos": "<class 'numpy.ndarray'> float32",
+        "node_type": "<class 'numpy.ndarray'> int32",
+        "velocity": "<class 'numpy.ndarray'> float32",
+        "pressure": "<class 'numpy.ndarray'> float32"
+    },
+    "11": {
+        "cells": "<class 'numpy.ndarray'> int32",
+        "mesh_pos": "<class 'numpy.ndarray'> float32",
+        "node_type": "<class 'numpy.ndarray'> int32",
+        "velocity": "<class 'numpy.ndarray'> float32",
+        "pressure": "<class 'numpy.ndarray'> float32"
+    },
+    "12": {
+        "cells": "<class 'numpy.ndarray'> int32",
+        "mesh_pos": "<class 'numpy.ndarray'> float32",
+        "node_type": "<class 'numpy.ndarray'> int32",
+        "velocity": "<class 'numpy.ndarray'> float32",
+        "pressure": "<class 'numpy.ndarray'> float32"
+    },
+    "13": {
+        "cells": "<class 'numpy.ndarray'> int32",
+        "mesh_pos": "<class 'numpy.ndarray'> float32",
+        "node_type": "<class 'numpy.ndarray'> int32",
+        "velocity": "<class 'numpy.ndarray'> float32",
+        "pressure": "<class 'numpy.ndarray'> float32"
+    },
+    "14": {
+        "cells": "<class 'numpy.ndarray'> int32",
+        "mesh_pos": "<class 'numpy.ndarray'> float32",
+        "node_type": "<class 'numpy.ndarray'> int32",
+        "velocity": "<class 'numpy.ndarray'> float32",
+        "pressure": "<class 'numpy.ndarray'> float32"
+    },
+    "15": {
+        "cells": "<class 'numpy.ndarray'> int32",
+        "mesh_pos": "<class 'numpy.ndarray'> float32",
+        "node_type": "<class 'numpy.ndarray'> int32",
+        "velocity": "<class 'numpy.ndarray'> float32",
+        "pressure": "<class 'numpy.ndarray'> float32"
+    },
+    "16": {
+        "cells": "<class 'numpy.ndarray'> int32",
+        "mesh_pos": "<class 'numpy.ndarray'> float32",
+        "node_type": "<class 'numpy.ndarray'> int32",
+        "velocity": "<class 'numpy.ndarray'> float32",
+        "pressure": "<class 'numpy.ndarray'> float32"
+    },
+    "17": {
+        "cells": "<class 'numpy.ndarray'> int32",
+        "mesh_pos": "<class 'numpy.ndarray'> float32",
+        "node_type": "<class 'numpy.ndarray'> int32",
+        "velocity": "<class 'numpy.ndarray'> float32",
+        "pressure": "<class 'numpy.ndarray'> float32"
+    },
+    "18": {
+        "cells": "<class 'numpy.ndarray'> int32",
+        "mesh_pos": "<class 'numpy.ndarray'> float32",
+        "node_type": "<class 'numpy.ndarray'> int32",
+        "velocity": "<class 'numpy.ndarray'> float32",
+        "pressure": "<class 'numpy.ndarray'> float32"
+    },
+    "19": {
+        "cells": "<class 'numpy.ndarray'> int32",
+        "mesh_pos": "<class 'numpy.ndarray'> float32",
+        "node_type": "<class 'numpy.ndarray'> int32",
+        "velocity": "<class 'numpy.ndarray'> float32",
+        "pressure": "<class 'numpy.ndarray'> float32"
+    },
+    "20": {
+        "cells": "<class 'numpy.ndarray'> int32",
+        "mesh_pos": "<class 'numpy.ndarray'> float32",
+        "node_type": "<class 'numpy.ndarray'> int32",
+        "velocity": "<class 'numpy.ndarray'> float32",
+        "pressure": "<class 'numpy.ndarray'> float32"
+    },
+    "21": {
+        "cells": "<class 'numpy.ndarray'> int32",
+        "mesh_pos": "<class 'numpy.ndarray'> float32",
+        "node_type": "<class 'numpy.ndarray'> int32",
+        "velocity": "<class 'numpy.ndarray'> float32",
+        "pressure": "<class 'numpy.ndarray'> float32"
+    },
+    "22": {
+        "cells": "<class 'numpy.ndarray'> int32",
+        "mesh_pos": "<class 'numpy.ndarray'> float32",
+        "node_type": "<class 'numpy.ndarray'> int32",
+        "velocity": "<class 'numpy.ndarray'> float32",
+        "pressure": "<class 'numpy.ndarray'> float32"
+    },
+    "23": {
+        "cells": "<class 'numpy.ndarray'> int32",
+        "mesh_pos": "<class 'numpy.ndarray'> float32",
+        "node_type": "<class 'numpy.ndarray'> int32",
+        "velocity": "<class 'numpy.ndarray'> float32",
+        "pressure": "<class 'numpy.ndarray'> float32"
+    },
+    "24": {
+        "cells": "<class 'numpy.ndarray'> int32",
+        "mesh_pos": "<class 'numpy.ndarray'> float32",
+        "node_type": "<class 'numpy.ndarray'> int32",
+        "velocity": "<class 'numpy.ndarray'> float32",
+        "pressure": "<class 'numpy.ndarray'> float32"
+    }
+}
