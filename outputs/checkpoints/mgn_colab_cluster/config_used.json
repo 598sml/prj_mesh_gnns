@@ -1,18 +1,14 @@
 {
-  "experiment_name": "mgn_25x200train_5x200valid_cluster",
-
+  "experiment_name": "mgn_colab_cluster",
   "seed": 5,
   "device": "cuda",
-
-  "dataset_source": "dataset_cluster",
-
+  "dataset_source": "dataset_colab",
   "dataset_colab": {
     "file_path": "data/processed/data_pt/meshgraphnets_miniset5traj_vis.pt",
     "train_size": 45,
     "valid_size": 10,
     "shuffle_before_split": true
   },
-
   "dataset_local": {
     "train_data": "data/processed/data_pt/train.pt",
     "valid_data": "data/processed/data_pt/valid.pt",
@@ -23,7 +19,6 @@
     "shuffle_train": true,
     "trajectory_length": 599
   },
-
   "dataset_cluster": {
     "train_data": "data/processed/data_pt/train_25traj_200graphs.pt",
     "valid_data": "data/processed/data_pt/valid_5traj_200graphs.pt",
@@ -34,45 +29,52 @@
     "shuffle_train": true,
     "trajectory_length": 200
   },
-
   "paths": {
     "checkpoint_dir": "outputs/checkpoints",
     "figure_dir": "outputs/figures",
     "one_step_dir": "outputs/figures/one_step",
     "rollout_dir": "outputs/figures/rollout_figures"
   },
-
   "data": {
     "delta_t": 0.01,
     "noise_scale": 0.0,
     "noise_gamma": 1.0
   },
-
   "model": {
     "hidden_dim": 10,
     "num_layers": 10
   },
-
   "training": {
     "batch_size": 16,
     "learning_rate": 0.001,
     "weight_decay": 0.0005,
     "num_epochs": 5000
   },
-
   "evaluation": {
-    "sample_indices": [0, 20, 50, 100, 150, 199]
+    "sample_indices": [
+      0,
+      20,
+      50,
+      100,
+      150,
+      199
+    ]
   },
-
   "rollout": {
     "split": "test",
     "train_traj_idx": 0,
-    "sample_steps": [0, 20, 50, 100, 150, 199]
+    "sample_steps": [
+      0,
+      20,
+      50,
+      100,
+      150,
+      199
+    ]
   },
-
   "wandb": {
     "enabled": true,
     "project": "meshgraphnet-vortex",
-    "run_name": "mgn_25x200train_5x200valid_cluster"
+    "run_name": "mgn_colab_cluster"
   }
 }
