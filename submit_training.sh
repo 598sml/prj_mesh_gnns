@@ -34,10 +34,10 @@ printf 'SCRIPT_PATH=%s\n' "$SCRIPT_PATH" >> "$ARGSFILE"
 JOB_SCRIPT="$JOB_PATH/sbatch_job.sh"
 cat > "$JOB_SCRIPT" <<'SBATCH_EOF'
 #!/usr/bin/env bash
-#SBATCH --partition=ic-express
+#SBATCH --partition=IllinoisComputes-GPU
 #SBATCH --account=agoza-ic
 #SBATCH --gres=gpu:1
-#SBATCH --time=07:00:00
+#SBATCH --time=71:59:00
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=32G
 #SBATCH --output=job-%j.out
