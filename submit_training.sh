@@ -6,6 +6,9 @@ PROJECT_DIR="${PROJECT_DIR:-$PWD}"
 PYTHON_MODULE="${PYTHON_MODULE:-python/3.11.11}"
 VENV_DIR="${VENV_DIR:-$PROJECT_DIR/.venv_mgn}"
 SCRIPT_PATH="${SCRIPT_PATH:-$PROJECT_DIR/scripts/run_train.py}"
+# The live config you edit between runs. A frozen copy is taken at submission
+# time so queued jobs are never affected by later edits.
+CONFIG_SOURCE="${CONFIG_SOURCE:-$PROJECT_DIR/configs/config.json}"
 
 # ---------- Extra sbatch flags after '--' ----------
 SBATCH_FLAGS=(); seen_ddash=0
@@ -22,6 +25,14 @@ if [[ -z "${JOB_PATH:-}" ]]; then
 fi
 mkdir -p "$JOB_PATH"
 
+# ---------- Freeze config at submission time ----------
+# Copy the live config into the job directory RIGHT NOW, before sbatch queues
+# the job. The job will read this frozen copy via --config, so edits you make
+# to configs/config.json while the job is pending have no effect on it.
+CONFIG_FROZEN="$JOB_PATH/config_frozen.json"
+cp "$CONFIG_SOURCE" "$CONFIG_FROZEN"
+echo "Frozen config saved to: $CONFIG_FROZEN"
+
 # ---------- Write args file ----------
 ARGSFILE="$JOB_PATH/args.txt"
 : > "$ARGSFILE"
@@ -29,6 +40,8 @@ printf 'PROJECT_DIR=%s\n' "$PROJECT_DIR" >> "$ARGSFILE"
 printf 'PYTHON_MODULE=%s\n' "$PYTHON_MODULE" >> "$ARGSFILE"
 printf 'VENV_DIR=%s\n' "$VENV_DIR" >> "$ARGSFILE"
 printf 'SCRIPT_PATH=%s\n' "$SCRIPT_PATH" >> "$ARGSFILE"
+# Absolute path to the frozen config so the job script can pass it to --config
+printf 'CONFIG_FROZEN=%s\n' "$(realpath "$CONFIG_FROZEN")" >> "$ARGSFILE"
 
 # ---------- Create sbatch script ----------
 JOB_SCRIPT="$JOB_PATH/sbatch_job.sh"
@@ -66,7 +79,7 @@ cd "$PROJECT_DIR"
 source "$VENV_DIR/bin/activate"
 
 nvidia-smi
-python "$SCRIPT_PATH"
+python "$SCRIPT_PATH" --config "$CONFIG_FROZEN"
 
 echo "[INFO] $(date -Is) done"
 SBATCH_EOF

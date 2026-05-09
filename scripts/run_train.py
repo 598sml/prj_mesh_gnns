@@ -1,5 +1,6 @@
 import os
 import sys
+import argparse
 import random
 import torch
 import matplotlib.pyplot as plt
@@ -28,7 +29,21 @@ class Tee:
             stream.flush()
 
 def main():
-    config_path = os.path.join(PROJECT_ROOT, "configs", "config.json")
+    # Accept an optional --config argument so that submit_training.sh can pass a
+    # frozen copy of config.json created at sbatch submission time. This prevents
+    # the job from silently picking up edits made to config.json while it was
+    # sitting in the SLURM queue. Without this, every queued job reads the live
+    # file at the moment the node actually starts — not at the moment you submitted.
+    # Falls back to configs/config.json when running locally without sbatch.
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--config",
+        default=os.path.join(PROJECT_ROOT, "configs", "config.json"),
+        help="Path to the config JSON file. Pass a frozen copy when submitting via sbatch.",
+    )
+    args = parser.parse_args()
+    config_path = args.config
+
     cfg_json = load_json_config(config_path)
     data_cfg = cfg_json[cfg_json["dataset_source"]]
 
