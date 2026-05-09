@@ -1,40 +1,21 @@
 import os
 import sys
-import random
-import json
-
-import numpy as np
 import torch
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
+from meshgraphnet.utils import load_json_config, set_seed
 from meshgraphnet.inference import (
     load_checkpoint_and_model,
     rollout_one_trajectory,
-)
-from meshgraphnet.data_utils import (
-    build_ordered_test_data,
 )
 
 from meshgraphnet.plot_utils import (
     make_comparison_plot,
     save_rmse_plot,
 )
-
-
-def load_json_config(path: str):
-    with open(path, "r") as f:
-        return json.load(f)
-
-
-def set_seed(seed: int = 0):
-    random.seed(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    if torch.cuda.is_available():
-        torch.cuda.manual_seed_all(seed)
 
 def main():
     config_path = os.path.join(PROJECT_ROOT, "configs", "config.json")
@@ -122,15 +103,15 @@ def main():
     else:
         raise ValueError(f"Unknown split: {split}")
 
-    checkpoint, cfg, model, stats = load_checkpoint_and_model(checkpoint_path)
-    print(f"Using device: {cfg.device}")
+    checkpoint, device, model, stats = load_checkpoint_and_model(checkpoint_path)
+    print(f"Using device: {device}")
 
     pred_graphs, rollout_rmse = rollout_one_trajectory(
         model=model,
         test_data=rollout_data,
         stats=stats,
         delta_t=delta_t,
-        device=cfg.device,
+        device=device,
     )
 
     print("\nRollout RMSE by step:")

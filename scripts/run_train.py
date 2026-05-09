@@ -1,7 +1,6 @@
 import os
 import sys
 import random
-import numpy as np
 import torch
 import matplotlib.pyplot as plt
 import json
@@ -11,7 +10,7 @@ PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-from meshgraphnet.config import Config
+from meshgraphnet.utils import load_json_config, set_seed
 from meshgraphnet.train_eval import train
 from meshgraphnet.normalization import get_stats
 
@@ -28,68 +27,12 @@ class Tee:
         for stream in self.streams:
             stream.flush()
 
-def load_json_config(path: str):
-    with open(path, "r") as f:
-        return json.load(f)
-
-
-def apply_json_to_cfg(cfg, cfg_json):
-    cfg.device = (
-        "cuda"
-        if (cfg_json["device"] == "cuda" and torch.cuda.is_available())
-        else "cpu"
-    )
-
-    cfg.model.hidden_dim = cfg_json["model"]["hidden_dim"]
-    cfg.model.num_layers = cfg_json["model"]["num_layers"]
-
-    cfg.training.batch_size = cfg_json["training"]["batch_size"]
-    cfg.training.learning_rate = cfg_json["training"]["learning_rate"]
-    cfg.training.weight_decay = cfg_json["training"]["weight_decay"]
-    cfg.training.num_epochs = cfg_json["training"]["num_epochs"]
-
-    if not hasattr(cfg, "data"):
-        class DataConfig:
-            pass
-        cfg.data = DataConfig()
-
-    cfg.data.noise_scale = cfg_json["data"]["noise_scale"]
-    cfg.data.noise_gamma = cfg_json["data"]["noise_gamma"]
-
-    return cfg
-
-def set_seed(seed: int = 0):
-    random.seed(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    if torch.cuda.is_available():
-        torch.cuda.manual_seed_all(seed)
-
-def build_cfg_dict(cfg):
-    return {
-        "device": cfg.device,
-        "model": {
-            "hidden_dim": cfg.model.hidden_dim,
-            "num_layers": cfg.model.num_layers,
-        },
-        "training": {
-            "batch_size": cfg.training.batch_size,
-            "learning_rate": cfg.training.learning_rate,
-            "weight_decay": cfg.training.weight_decay,
-            "num_epochs": cfg.training.num_epochs,
-        },
-        "data": {
-            "noise_scale": cfg.data.noise_scale,
-            "noise_gamma": cfg.data.noise_gamma,
-        },
-    }
-
 def main():
-    cfg = Config()
-
     config_path = os.path.join(PROJECT_ROOT, "configs", "config.json")
     cfg_json = load_json_config(config_path)
     data_cfg = cfg_json[cfg_json["dataset_source"]]
+
+    device = "cuda" if (cfg_json["device"] == "cuda" and torch.cuda.is_available()) else "cpu"
 
     if cfg_json["wandb"]["enabled"]:
         wandb.init(
@@ -97,19 +40,6 @@ def main():
             name=cfg_json["wandb"]["run_name"],
             config=cfg_json,
         )
-    cfg = apply_json_to_cfg(cfg, cfg_json)
-
-    # optional repo-style data noise settings
-    if not hasattr(cfg, "data"):
-        class DataConfig:
-            noise_scale = 0.0
-            noise_gamma = 1.0
-        cfg.data = DataConfig()
-    else:
-        if not hasattr(cfg.data, "noise_scale"):
-            cfg.data.noise_scale = 0.0
-        if not hasattr(cfg.data, "noise_gamma"):
-            cfg.data.noise_gamma = 1.0
 
     # base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     # file_path = os.path.join(base_dir, "meshgraphnets_miniset5traj_vis.pt")
@@ -174,7 +104,7 @@ def main():
     print(f"Train sample edge_attr shape: {data_train[0].edge_attr.shape}")
     print(f"Train sample y shape: {data_train[0].y.shape}")
     print(f"Valid sample x shape: {data_valid[0].x.shape}")
-    print(f"Device: {cfg.device}")
+    print(f"Device: {device}")
 
     # compute stats on train, originally we had train+valid but that leaks valid info into train stats
     stats_list = get_stats(data_train)
@@ -190,8 +120,8 @@ def main():
         data_train=data_train,
         data_valid=data_valid,
         stats_list=stats_list,
-        cfg=cfg,
         cfg_json=cfg_json,
+        device=device,
     )
 
     print("Finished training.")
@@ -225,7 +155,12 @@ def main():
     )
     os.makedirs(save_dir, exist_ok=True)
 
-    cfg_dict = build_cfg_dict(cfg)
+    cfg_dict = {
+        "device": device,
+        "model": cfg_json["model"],
+        "training": cfg_json["training"],
+        "data": cfg_json["data"],
+    }
 
     if isinstance(best_model, dict):
         best_state_dict = best_model

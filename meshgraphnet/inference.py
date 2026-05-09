@@ -1,40 +1,8 @@
-import copy # used for deep copying graphs during rollout
-from types import SimpleNamespace
+import copy
 
 import torch
-
-from .config import Config
 from .model import MeshGraphNet
 from . import normalization as norm
-
-
-def rebuild_cfg_from_dict(cfg_dict, device=None):
-    """
-    Rebuild a Config object from the plain dictionary saved in the checkpoint.
-    """
-    cfg = Config()
-
-    if device is None:
-        cfg.device = "cuda" if torch.cuda.is_available() else "cpu"
-    else:
-        cfg.device = device
-
-    cfg.model.hidden_dim = cfg_dict["model"]["hidden_dim"]
-    cfg.model.num_layers = cfg_dict["model"]["num_layers"]
-
-    cfg.training.batch_size = cfg_dict["training"]["batch_size"]
-    cfg.training.learning_rate = cfg_dict["training"]["learning_rate"]
-    cfg.training.weight_decay = cfg_dict["training"]["weight_decay"]
-    cfg.training.num_epochs = cfg_dict["training"]["num_epochs"]
-
-    if not hasattr(cfg, "data"):
-        cfg.data = SimpleNamespace()
-
-    cfg.data.noise_scale = cfg_dict["data"]["noise_scale"]
-    cfg.data.noise_gamma = cfg_dict["data"]["noise_gamma"]
-
-    return cfg
-
 
 def move_stats_to_device(stats_list, device):
     """
@@ -65,23 +33,25 @@ def load_checkpoint_and_model(checkpoint_path, device=None):
     and return everything needed for inference/evaluation.
     """
     checkpoint = torch.load(checkpoint_path, weights_only=False)
+    cfg_dict = checkpoint["cfg_dict"]
 
-    cfg = rebuild_cfg_from_dict(checkpoint["cfg_dict"], device=device)
+    if device is None:
+        device = "cuda" if (cfg_dict["device"] == "cuda" and torch.cuda.is_available()) else "cpu"
 
     model = MeshGraphNet(
         input_dim_node=checkpoint["num_node_features"],
         input_dim_edge=checkpoint["num_edge_features"],
-        hidden_dim=cfg.model.hidden_dim,
+        hidden_dim=cfg_dict["model"]["hidden_dim"],
         output_dim=checkpoint["num_classes"],
-        cfg=cfg,
-    ).to(cfg.device)
+        num_layers=cfg_dict["model"]["num_layers"],
+    ).to(device)
 
     model.load_state_dict(checkpoint["model_state_dict"])
     model.eval()
 
-    stats = move_stats_to_device(checkpoint["stats_list"], cfg.device)
+    stats = move_stats_to_device(checkpoint["stats_list"], device)
 
-    return checkpoint, cfg, model, stats
+    return checkpoint, device, model, stats
 
 
 def predict_normalized_increment(model, graph, stats):

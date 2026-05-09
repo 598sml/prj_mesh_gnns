@@ -1,9 +1,5 @@
 import os
 import sys
-import random
-import json
-
-import numpy as np
 import torch
 from torch_geometric.loader import DataLoader
 
@@ -11,6 +7,7 @@ PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
+from meshgraphnet.utils import load_json_config, set_seed
 from meshgraphnet.train_eval import evaluate
 from meshgraphnet.inference import (
     load_checkpoint_and_model,
@@ -20,7 +17,6 @@ from meshgraphnet.inference import (
 )
 
 from meshgraphnet.data_utils import (
-    build_ordered_test_data,
     check_consecutive_pair,
 )
 
@@ -29,18 +25,6 @@ from meshgraphnet.plot_utils import (
     save_rmse_plot
 )
 
-
-def load_json_config(path: str):
-    with open(path, "r") as f:
-        return json.load(f)
-
-
-def set_seed(seed: int = 0):
-    random.seed(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    if torch.cuda.is_available():
-        torch.cuda.manual_seed_all(seed)
 
 def main():
     config_path = os.path.join(PROJECT_ROOT, "configs", "config.json")
@@ -91,8 +75,8 @@ def main():
     print("test exists:", os.path.exists(test_data_path))
 
     # ---------- Load checkpoint ----------
-    checkpoint, cfg, model, stats = load_checkpoint_and_model(checkpoint_path)
-    print(f"Using device: {cfg.device}")
+    checkpoint, device, model, stats = load_checkpoint_and_model(checkpoint_path)
+    print(f"Using device: {device}")
 
     # ---------- Load test data ----------
     test_data = torch.load(test_data_path, weights_only=False)
@@ -114,13 +98,13 @@ def main():
     # ---------- Quantitative evaluation ----------
     test_loader = DataLoader(
         test_data,
-        batch_size=cfg.training.batch_size,
+        batch_size=cfg_json["training"]["batch_size"],
         shuffle=False,
     )
 
     test_loss, test_velocity_rmse = evaluate(
         loader=test_loader,
-        device=cfg.device,
+        device=device,
         model=model,
         mean_vec_x=mean_vec_x,
         std_vec_x=std_vec_x,
@@ -146,8 +130,8 @@ def main():
     per_step_rmse = []
 
     for i in range(len(test_data) - 1):
-        sample = test_data[i].to(cfg.device)
-        next_sample = test_data[i + 1].to(cfg.device)
+        sample = test_data[i].to(device)
+        next_sample = test_data[i + 1].to(device)
 
         rmse, pred_velocity_next, true_velocity_next = one_step_pair_rmse(
             model=model,
@@ -179,7 +163,7 @@ def main():
             print(f"Skipping sample {sample_idx}: out of range.")
             continue
 
-        sample = test_data[sample_idx].to(cfg.device)
+        sample = test_data[sample_idx].to(device)
 
         pred_velocity_next, _ = predict_next_velocity(
             model=model,

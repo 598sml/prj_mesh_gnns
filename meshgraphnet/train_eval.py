@@ -7,7 +7,7 @@ import time
 import wandb
 
 
-def train(data_train, data_valid, stats_list, cfg, cfg_json=None):
+def train(data_train, data_valid, stats_list, cfg_json, device):
     """
     Performs a training loop on the dataset for MeshGraphNet.
     """
@@ -19,13 +19,13 @@ def train(data_train, data_valid, stats_list, cfg, cfg_json=None):
     # Data is previously shuffled, since we randomly sample time steps from the trajectories, so we do not shuffle here
     train_loader = DataLoader(
         data_train,
-        batch_size=cfg.training.batch_size, # number of graph samples in one batch. epoch is one pass through the whole dataset. We define the number of samples in config and with batch size we how many batches per epoch. If batch size is 1, we update the model after every graph sample, if batch size is 10, we update the model after every 10 graph samples. At every batch we are optimizing the weights of the MLPs in the model.
-        shuffle=False,  
+        batch_size=cfg_json["training"]["batch_size"], # number of graph samples in one batch. epoch is one pass through the whole dataset. We define the number of samples in config and with batch size we how many batches per epoch. If batch size is 1, we update the model after every graph sample, if batch size is 10, we update the model after every 10 graph samples. At every batch we are optimizing the weights of the MLPs in the model.
+        shuffle=False,
     )
 
     valid_loader = DataLoader(
         data_valid,
-        batch_size=cfg.training.batch_size,
+        batch_size=cfg_json["training"]["batch_size"],
         shuffle=False,
     )
 
@@ -41,12 +41,12 @@ def train(data_train, data_valid, stats_list, cfg, cfg_json=None):
 
     (mean_vec_x, std_vec_x, mean_vec_edge, std_vec_edge, mean_vec_y, std_vec_y) = (
 
-        mean_vec_x.to(cfg.device),
-        std_vec_x.to(cfg.device),
-        mean_vec_edge.to(cfg.device),
-        std_vec_edge.to(cfg.device),
-        mean_vec_y.to(cfg.device),
-        std_vec_y.to(cfg.device),
+        mean_vec_x.to(device),
+        std_vec_x.to(device),
+        mean_vec_edge.to(device),
+        std_vec_edge.to(device),
+        mean_vec_y.to(device),
+        std_vec_y.to(device),
     )
 
     num_node_features = data_train[0].x.shape[1]
@@ -56,15 +56,15 @@ def train(data_train, data_valid, stats_list, cfg, cfg_json=None):
     model = MeshGraphNet(
         input_dim_node=num_node_features,
         input_dim_edge=num_edge_features,
-        hidden_dim = cfg.model.hidden_dim,
-        output_dim = num_classes,
-        cfg=cfg,
-    ).to(cfg.device)  
+        hidden_dim=cfg_json["model"]["hidden_dim"],
+        output_dim=num_classes,
+        num_layers=cfg_json["model"]["num_layers"],
+    ).to(device)
 
     optimizer = torch.optim.Adam(
-        model.parameters(), 
-        lr=cfg.training.learning_rate,
-        weight_decay=cfg.training.weight_decay,
+        model.parameters(),
+        lr=cfg_json["training"]["learning_rate"],
+        weight_decay=cfg_json["training"]["weight_decay"],
     )
 
     train_losses = []
@@ -73,15 +73,16 @@ def train(data_train, data_valid, stats_list, cfg, cfg_json=None):
     best_valid_loss = float('inf')
     best_model = None
 
+    delta_t = cfg_json["data"]["delta_t"]
     start_time = time.time()
 
-    for epoch in range(cfg.training.num_epochs):
+    for epoch in range(cfg_json["training"]["num_epochs"]):
         model.train()
         total_train_loss = 0.0
         num_train_batches = 0
 
         for batch in train_loader:
-            batch = batch.to(cfg.device)
+            batch = batch.to(device)
 
             optimizer.zero_grad()
             pred = model(batch, mean_vec_x, std_vec_x, mean_vec_edge, std_vec_edge)
@@ -100,7 +101,7 @@ def train(data_train, data_valid, stats_list, cfg, cfg_json=None):
 
             valid_loss, velocity_valid_rmse = evaluate(
                 valid_loader,
-                cfg.device,
+                device,
                 model,
                 mean_vec_x,
                 std_vec_x,
@@ -108,7 +109,7 @@ def train(data_train, data_valid, stats_list, cfg, cfg_json=None):
                 std_vec_edge,
                 mean_vec_y,
                 std_vec_y,
-                delta_t=0.01,
+                delta_t=delta_t,
             )
             valid_losses.append(valid_loss)
             velocity_valid_losses.append(velocity_valid_rmse)
@@ -123,18 +124,18 @@ def train(data_train, data_valid, stats_list, cfg, cfg_json=None):
             valid_losses.append(valid_losses[-1])
             velocity_valid_losses.append(velocity_valid_losses[-1])
 
-        if cfg_json is not None and cfg_json["wandb"]["enabled"]:
+        if cfg_json["wandb"]["enabled"]:
             wandb.log({
                 "epoch": epoch + 1,
                 "train_loss": avg_train_loss,
                 "valid_loss": valid_losses[-1],
                 "velocity_valid_rmse": velocity_valid_losses[-1],
                 "best_valid_loss": best_valid_loss,
-            })                
+            })
 
         if epoch % 100 == 0:
             print(
-                f"Epoch {epoch+1}/{cfg.training.num_epochs}, "
+                f"Epoch {epoch+1}/{cfg_json['training']['num_epochs']}, "
                 f"Train Loss: {avg_train_loss:.6f}, "
                 f"Valid Loss: {valid_losses[-1]:.6f}, "
                 f"Vel RMSE: {velocity_valid_losses[-1]:.6f}, "
@@ -143,18 +144,18 @@ def train(data_train, data_valid, stats_list, cfg, cfg_json=None):
 
     elapsed_time = time.time() - start_time
     print(f"Training completed in {elapsed_time:.2f} seconds ({elapsed_time/60:.2f} minutes)")
-    
+
     return (
         model,
         train_losses,
-        valid_losses, 
-        velocity_valid_losses, 
-        best_model, 
+        valid_losses,
+        velocity_valid_losses,
+        best_model,
         best_valid_loss
     )
 
 def evaluate(
-        loader, 
+        loader,
         device,
         model,
         mean_vec_x,
@@ -183,7 +184,7 @@ def evaluate(
             # Get the loss mask for the normal and outflow nodes
             node_types = torch.argmax(data.x[:, 2:], dim=1)  # One-hot encoding for node types, here we can define where is the node. Ex nomal, obstacle, outflow, etc
             loss_mask = (node_types == 0) | (node_types == 5)
-            
+
             # evaluate  the velocity (updating velocity)
             eval_velocity = (data.x[:, 0:2] + norm.unnormalize(pred, mean_vec_y, std_vec_y) * delta_t)
 

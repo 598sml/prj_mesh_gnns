@@ -7,7 +7,7 @@ from . import normalization as norm
 from .processor import ProcessorLayer
 
 class MeshGraphNet(torch.nn.Module):
-    def __init__(self, input_dim_node, input_dim_edge, hidden_dim, output_dim, cfg):
+    def __init__(self, input_dim_node, input_dim_edge, hidden_dim, output_dim, num_layers):
         super(MeshGraphNet, self).__init__()
         """
         MeshGraphNet model. Built upon Deepmind's 2021 paper.
@@ -18,7 +18,7 @@ class MeshGraphNet(torch.nn.Module):
         Output_dim: dimension of the output.
         """
 
-        self.num_layers = cfg.model.num_layers
+        self.num_layers = num_layers
 
         # Encoder
         self.node_encoder = Sequential(
